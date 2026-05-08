@@ -1,7 +1,5 @@
 # 🛡️ TrueVoice — Real-Time Deepfake Voice Detection
 
-> *"The technology to clone a voice is accessible to anyone. The technology to detect it has not been — until now."*
-
 [![Model](https://img.shields.io/badge/Model-Gemma%204%20E4B-blue)](https://huggingface.co/google/gemma-4-e4b-it)
 [![Dataset](https://img.shields.io/badge/Dataset-ASVspoof%202019%2F2021-green)](https://datashare.ed.ac.uk/handle/10283/3336)
 [![EER](https://img.shields.io/badge/EER-5.20%25-orange)](/)
