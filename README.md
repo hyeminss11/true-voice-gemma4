@@ -1,23 +1,27 @@
 # 🛡️ TrueVoice — Deepfake Voice Detection with Gemma 4 E4B
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/hyeminss11/true-voice-gemma4/blob/main/truevoice_demo.ipynb)
 [![Model](https://img.shields.io/badge/Model-Gemma%204%20E4B-blue)](https://huggingface.co/google/gemma-4-e4b-it)
 [![Dataset](https://img.shields.io/badge/Dataset-ASVspoof%202019%2F2021-green)](https://datashare.ed.ac.uk/handle/10283/3336)
-[![EER](https://img.shields.io/badge/EER-5.20%25-orange)](/)
+[![EER](https://img.shields.io/badge/EER-5.20%25-orange)]()
+[![Track](https://img.shields.io/badge/Track-Safety%20%26%20Trust-red)]()
 
 ---
 
 ## Overview
 
-TrueVoice detects AI-generated (deepfake) voices using Gemma 4 E4B's audio encoder as a feature extractor. A user receiving a suspicious call can record the audio via microphone or upload a file, and receive a verdict — Real Voice or Deepfake Detected — within seconds. No installation or account required.
+TrueVoice detects AI-generated (deepfake) voices using Gemma 4 E4B's audio encoder as a feature extractor. A user receiving a suspicious call can record audio via microphone or upload a file, and receive a verdict — **Real Voice** or **Deepfake Detected** — within seconds. No installation or account required.
 
 ---
 
 ## The Problem
 
-Voice cloning now requires three seconds of publicly available audio and a free online tool. The misuse of this technology is accelerating: AI-powered voice phishing attacks resulted in over $5 million in documented US losses in 2025, with 1 in 3 victims losing money and average losses of $18,000 per victim (Trend Micro, 2026). The FBI's 2025 IC3 report flagged $893 million in AI-related scam losses, and Deloitte projects generative AI-enabled fraud will reach $40 billion by 2027.
+Voice cloning is a genuinely useful technology, but its misuse is accelerating. A convincing voice clone now requires three seconds of publicly available audio and a free online tool — a voicemail greeting, a social media clip, a podcast appearance.
 
-Existing detection tools are either enterprise-grade (expensive, API-dependent) or research-grade (not consumer-deployable). TrueVoice fills that gap with a browser-accessible tool requiring nothing from the user except a microphone.
+- Over **$5 million** lost to AI voice phishing in the US in 2025; 1 in 3 victims lose money, averaging **$18,000 per incident** ([Trend Micro, 2026](https://news.trendmicro.com/2026/04/16/ai-voice-cloning/))
+- **$893 million** in AI-related scam losses reported to the FBI in 2025 — likely a significant undercount ([FBI IC3, 2025](https://www.ic3.gov/AnnualReport/Reports/2025_IC3Report.pdf))
+- Generative AI-enabled fraud projected to reach **$40 billion by 2027** ([Deloitte, 2024](https://www.deloitte.com/us/en/insights/industry/financial-services/deepfake-banking-fraud-risk-on-the-rise.html))
+
+Existing detection tools are either enterprise-grade (expensive, API-dependent) or research-grade (not consumer-deployable). TrueVoice fills that gap.
 
 ---
 
@@ -35,6 +39,8 @@ Mean pooling over time axis
 Linear(1536→256) → GELU → Dropout(0.3) → Linear(256→2)
 ↓
 Real / Fake
+
+We froze the audio tower entirely and trained only the **1.5MB classification head**. This demonstrates that Gemma 4's pretrained audio representations generalize to security-critical tasks without backbone fine-tuning.
 
 ---
 
@@ -56,7 +62,7 @@ Evaluated on the full ASVspoof 2021 LA eval set (148,176 samples):
 
 ## Training
 
-**Dataset:** ASVspoof 2019 Logical Access (train/dev) + ASVspoof 2021 LA eval
+**Dataset:** ASVspoof 2019 Logical Access (train/dev) + ASVspoof 2021 LA eval ([Yamagishi et al., 2021](https://arxiv.org/abs/2109.00537))
 
 | Split | Samples | Real | Fake |
 |-------|---------|------|------|
@@ -95,15 +101,16 @@ The demo runs as a Gradio web app. Running the final cell in `truevoice_demo.ipy
 - HF token set as Colab secret (`HF_TOKEN`)
 
 **Steps:**
-1. Open `truevoice_demo.ipynb` in Colab (click the badge above)
-2. Mount Google Drive and set paths
-3. Run all cells in order
-4. Copy the public Gradio URL from the output of the last cell
+1. Download `truevoice_demo.ipynb` and `saved_model/` from this repository
+2. Upload `truevoice_demo.ipynb` to [Google Colab](https://colab.research.google.com)
+3. Place `classifier_head.pt` and `metadata.json` in `/MyDrive/2026truevoice/saved_model/` on your Google Drive
+4. Run all cells in order
+5. Copy the public Gradio URL from the output of the last cell
 
 **Supported inputs:**
 - Upload audio file (WAV, MP3, FLAC — max 29 seconds)
 - Record directly via microphone
-- Phone Call Simulation Mode: applies 8kHz codec processing to replicate real phone call conditions
+- **Phone Call Simulation Mode**: applies 8kHz codec processing to replicate real phone call conditions
 
 ---
 
@@ -144,6 +151,17 @@ Full training pipeline: see `truevoice_finetune.ipynb`
 | Demo | Gradio (browser-accessible, 72hr public URL) |
 | Classifier size | 1.5MB |
 | Inference latency | ~2s per clip (A100) |
+
+---
+
+## Why This Matters
+
+The elderly are disproportionately targeted by voice phishing and are also the least likely to install specialized software. A browser URL is a deliberate accessibility decision — TrueVoice requires nothing from the user except a browser and a microphone.
+
+**Roadmap:**
+- Integration with telecom provider APIs for passive call screening
+- On-device inference using Gemma 4 E2B for fully private, offline detection
+- Expansion to non-English voice cloning attacks
 
 ---
 
