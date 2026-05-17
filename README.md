@@ -1,21 +1,14 @@
 # 🛡️ TrueVoice — Deepfake Voice Detection with Gemma 4 E4B
 
-[![Model](https://img.shields.io/badge/Model-Gemma%204%20E4B-blue)](https://huggingface.co/google/gemma-4-e4b-it)
-[![Dataset](https://img.shields.io/badge/Dataset-ASVspoof%202019%2F2021-green)](https://datashare.ed.ac.uk/handle/10283/3336)
-[![EER](https://img.shields.io/badge/EER-5.20%25-orange)]()
-[![Track](https://img.shields.io/badge/Track-Safety%20%26%20Trust-red)]()
-
----
-
 ## Overview
 
-TrueVoice detects AI-generated (deepfake) voices using Gemma 4 E4B's audio encoder as a feature extractor. A user receiving a suspicious call can record audio via microphone or upload a file, and receive a verdict — **Real Voice** or **Deepfake Detected** — within seconds. No installation or account required.
+TrueVoice detects AI-generated (deepfake) voices using [Gemma 4 E4B](https://huggingface.co/google/gemma-4-e4b-it)'s audio encoder as a feature extractor. A user receiving a suspicious call can record audio via microphone or upload a file, and receive a verdict — **Real Voice** or **Deepfake Detected** — within seconds. No installation or account required.
 
 ---
 
 ## The Problem
 
-Voice cloning is a genuinely useful technology, but its misuse is accelerating. A convincing voice clone now requires three seconds of publicly available audio and a free online tool — a voicemail greeting, a social media clip, a podcast appearance.
+Voice cloning is a genuinely useful technology, but its misuse is accelerating. A convincing voice clone now requires three seconds of publicly available audio and a free online tool.
 
 - Over **$5 million** lost to AI voice phishing in the US in 2025; 1 in 3 victims lose money, averaging **$18,000 per incident** ([Trend Micro, 2026](https://news.trendmicro.com/2026/04/16/ai-voice-cloning/))
 - **$893 million** in AI-related scam losses reported to the FBI in 2025 — likely a significant undercount ([FBI IC3, 2025](https://www.ic3.gov/AnnualReport/Reports/2025_IC3Report.pdf))
@@ -46,7 +39,7 @@ We froze the audio tower entirely and trained only the **1.5MB classification he
 
 ## Results
 
-Evaluated on the full ASVspoof 2021 LA eval set (148,176 samples):
+Evaluated on the full [ASVspoof 2021 LA eval set](https://arxiv.org/abs/2109.00537) (148,176 samples):
 
 | Metric | Value |
 |--------|-------|
@@ -62,7 +55,7 @@ Evaluated on the full ASVspoof 2021 LA eval set (148,176 samples):
 
 ## Training
 
-**Dataset:** ASVspoof 2019 Logical Access (train/dev) + ASVspoof 2021 LA eval ([Yamagishi et al., 2021](https://arxiv.org/abs/2109.00537))
+**Dataset:** [ASVspoof 2019](https://datashare.ed.ac.uk/handle/10283/3336) Logical Access (train/dev) + ASVspoof 2021 LA eval ([Yamagishi et al., 2021](https://arxiv.org/abs/2109.00537))
 
 | Split | Samples | Real | Fake |
 |-------|---------|------|------|
@@ -162,12 +155,3 @@ The elderly are disproportionately targeted by voice phishing and are also the l
 - Integration with telecom provider APIs for passive call screening
 - On-device inference using Gemma 4 E2B for fully private, offline detection
 - Expansion to non-English voice cloning attacks
-
----
-
-## References
-
-- Yamagishi et al., [ASVspoof 2021: Accelerating progress in spoofed and deepfake speech detection](https://arxiv.org/abs/2109.00537) (2021)
-- FBI, [2025 Internet Crime Report](https://www.ic3.gov/AnnualReport/Reports/2025_IC3Report.pdf)
-- Trend Micro, [AI Voice Cloning Scam Report](https://news.trendmicro.com/2026/04/16/ai-voice-cloning/) (April 2026)
-- Deloitte, [Deepfake Banking Fraud Risk on the Rise](https://www.deloitte.com/us/en/insights/industry/financial-services/deepfake-banking-fraud-risk-on-the-rise.html) (2024)
