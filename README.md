@@ -52,7 +52,6 @@ Evaluated on the full [ASVspoof 2021 LA eval set](https://arxiv.org/abs/2109.005
 | Real Recall | 93% |
 | Fake Precision | 0.99 |
 | Classifier size | 1.5MB |
-| Inference latency | ~2s per clip (A100) |
 
 ---
 
@@ -70,7 +69,7 @@ Evaluated on the full [ASVspoof 2021 LA eval set](https://arxiv.org/abs/2109.005
 
 **Codec simulation** — ASVspoof 2019 recordings are studio-quality, while real-world phone calls pass through codecs that compress audio to 8kHz. We applied codec simulation to all training data (16kHz → 8kHz → 16kHz), forcing the model to learn actual voice artifacts rather than audio quality differences. This is the single most impactful preprocessing decision in our pipeline.
 
-**On-the-fly DataCollator** — Loading 25,000+ audio files into RAM is not feasible on Colab A100. We store only file paths and labels in the dataset object and load audio per batch, keeping memory stable throughout training.
+**On-the-fly DataCollator** — Loading 25,000+ audio files into RAM is not feasible on Colab. We store only file paths and labels in the dataset object and load audio per batch, keeping memory stable throughout training.
 
 **Dtype consistency** — Gemma 4 E4B operates in bfloat16. Input features must be explicitly cast to bfloat16 inside the DataCollator to prevent NaN propagation at the boundary with the audio tower's computation graph.
 
@@ -87,6 +86,7 @@ Evaluated on the full [ASVspoof 2021 LA eval set](https://arxiv.org/abs/2109.005
     ├── classifier_head.pt          # Trained classification head (1.5MB)
     └── metadata.json               # Training metadata
 ```
+
 ---
 
 ## Running the Demo
@@ -94,16 +94,15 @@ Evaluated on the full [ASVspoof 2021 LA eval set](https://arxiv.org/abs/2109.005
 The demo runs as a Gradio web app. Running the final cell in `truevoice_demo.ipynb` generates a public URL valid for 72 hours.
 
 **Requirements:**
-- Google Colab (A100 recommended) or local GPU with 16GB+ VRAM
+- Google Colab with GPU enabled (T4 or higher)
 - HuggingFace account with access to `google/gemma-4-e4b-it`
 - HF token set as Colab secret (`HF_TOKEN`)
 
 **Steps:**
-1. Download `truevoice_demo.ipynb` and `saved_model/` from this repository
-2. Upload `truevoice_demo.ipynb` to [Google Colab](https://colab.research.google.com)
-3. Place `classifier_head.pt` and `metadata.json` in `/MyDrive/2026truevoice/saved_model/` on your Google Drive
-4. Run all cells in order
-5. Copy the public Gradio URL from the output of the last cell
+1. Download `truevoice_demo.ipynb` from this repository
+2. Upload to [Google Colab](https://colab.research.google.com)
+3. Run all cells in order
+4. Copy the public Gradio URL from the output of the last cell
 
 **Supported inputs:**
 - Upload audio file (WAV, MP3, FLAC — max 29 seconds)
@@ -144,11 +143,10 @@ Full training pipeline: see `truevoice_finetune.ipynb`
 | Component | Detail |
 |-----------|--------|
 | Model | Gemma 4 E4B (`google/gemma-4-e4b-it`) |
-| Training | Google Colab A100, HuggingFace Transformers |
+| Training | Google Colab, HuggingFace Transformers |
 | Dataset | ASVspoof 2019 LA + 2021 LA eval |
 | Demo | Gradio (browser-accessible, 72hr public URL) |
 | Classifier size | 1.5MB |
-| Inference latency | ~2s per clip (A100) |
 
 ---
 
@@ -160,3 +158,12 @@ The elderly are disproportionately targeted by voice phishing and are also the l
 - Integration with telecom provider APIs for passive call screening
 - On-device inference using Gemma 4 E2B for fully private, offline detection
 - Expansion to non-English voice cloning attacks
+
+---
+
+## References
+
+- Yamagishi et al., [ASVspoof 2021: Accelerating progress in spoofed and deepfake speech detection](https://arxiv.org/abs/2109.00537) (2021)
+- FBI, [2025 Internet Crime Report](https://www.ic3.gov/AnnualReport/Reports/2025_IC3Report.pdf)
+- Trend Micro, [AI Voice Cloning Scam Report](https://news.trendmicro.com/2026/04/16/ai-voice-cloning/) (April 2026)
+- Deloitte, [Deepfake Banking Fraud Risk on the Rise](https://www.deloitte.com/us/en/insights/industry/financial-services/deepfake-banking-fraud-risk-on-the-rise.html) (2024)
