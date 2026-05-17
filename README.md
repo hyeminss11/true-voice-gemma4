@@ -21,17 +21,20 @@ Existing detection tools are either enterprise-grade (expensive, API-dependent) 
 ## Architecture
 
 We repurposed Gemma 4 E4B's `audio_tower` as a frozen feature extractor and trained a lightweight 1.5MB classification head on top.
+
+```text
 Raw audio (16kHz)
-↓
+        ↓
 Mel spectrogram (via Gemma 4 processor)
-↓
+        ↓
 Gemma 4 E4B audio_tower — frozen (1536-dim output)
-↓
+        ↓
 Mean pooling over time axis
-↓
+        ↓
 Linear(1536→256) → GELU → Dropout(0.3) → Linear(256→2)
-↓
+        ↓
 Real / Fake
+```
 
 We froze the audio tower entirely and trained only the **1.5MB classification head**. This demonstrates that Gemma 4's pretrained audio representations generalize to security-critical tasks without backbone fine-tuning.
 
@@ -74,14 +77,16 @@ Evaluated on the full [ASVspoof 2021 LA eval set](https://arxiv.org/abs/2109.005
 ---
 
 ## Repository Structure
+
+```text
 ├── truevoice_data_pipeline.ipynb   # Data preprocessing pipeline
 ├── truevoice_finetune.ipynb        # Model training (linear probing)
 ├── truevoice_test.ipynb            # EER evaluation on ASVspoof 2021
 ├── truevoice_demo.ipynb            # Gradio demo (run to get live URL)
 └── saved_model/
-├── classifier_head.pt          # Trained classification head (1.5MB)
-└── metadata.json               # Training metadata
-
+    ├── classifier_head.pt          # Trained classification head (1.5MB)
+    └── metadata.json               # Training metadata
+```
 ---
 
 ## Running the Demo
