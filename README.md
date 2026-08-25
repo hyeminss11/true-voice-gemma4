@@ -167,3 +167,10 @@ The elderly are disproportionately targeted by voice phishing and are also the l
 - FBI, [2025 Internet Crime Report](https://www.ic3.gov/AnnualReport/Reports/2025_IC3Report.pdf)
 - Trend Micro, [AI Voice Cloning Scam Report](https://news.trendmicro.com/2026/04/16/ai-voice-cloning/) (April 2026)
 - Deloitte, [Deepfake Banking Fraud Risk on the Rise](https://www.deloitte.com/us/en/insights/industry/financial-services/deepfake-banking-fraud-risk-on-the-rise.html) (2024)
+
+## License
+The project source code is licensed under the MIT License.
+
+For the purposes of The Gemma 4 Good Hackathon, the winning Submission and the source code used to generate it are additionally made available under the Creative Commons Attribution 4.0 International (CC BY 4.0) License in accordance with the competition rules.
+
+Third-party models, datasets, and libraries remain subject to their respective licenses.
