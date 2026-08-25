@@ -168,6 +168,8 @@ The elderly are disproportionately targeted by voice phishing and are also the l
 - Trend Micro, [AI Voice Cloning Scam Report](https://news.trendmicro.com/2026/04/16/ai-voice-cloning/) (April 2026)
 - Deloitte, [Deepfake Banking Fraud Risk on the Rise](https://www.deloitte.com/us/en/insights/industry/financial-services/deepfake-banking-fraud-risk-on-the-rise.html) (2024)
 
+---
+
 ## License
 The project source code is licensed under the MIT License.
 
