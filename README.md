@@ -1,33 +1,46 @@
-# 🛡️ TrueVoice — Deepfake Voice Detection with Gemma 4 E4B
+# true-voice-gemma4
+**TrueVoice: Detecting AI Voice-Cloning Scams with Gemma 4 E4B**
 
 ## Overview
+This repository contains the code for TrueVoice, built by a 2-person team for the Gemma 4 Good Hackathon (Google DeepMind × Kaggle), where it won the Safety & Trust Track. TrueVoice detects AI-generated (deepfake) voices using [Gemma 4 E4B](https://huggingface.co/google/gemma-4-e4b-it)'s audio encoder as a feature extractor. A user receiving a suspicious call can record audio or upload a file in the browser and receive a verdict (**Real Voice** or **Deepfake Detected**) within seconds, with no installation or account.
 
-TrueVoice detects AI-generated (deepfake) voices using [Gemma 4 E4B](https://huggingface.co/google/gemma-4-e4b-it)'s audio encoder as a feature extractor. A user receiving a suspicious call can record audio via microphone or upload a file, and receive a verdict — **Real Voice** or **Deepfake Detected** — within seconds. No installation or account required.
+Voice cloning now needs only a few seconds of public audio and a free online tool, and AI voice phishing losses are rising quickly. Existing detection tools are either enterprise-grade (expensive, API-dependent) or research-grade (not consumer-deployable), so the people most targeted, such as elderly users, have no practical protection.
 
----
+## Research Questions
+1. **Transferability**: Can a general-purpose multimodal audio encoder, never trained for anti-spoofing, separate real from synthetic speech?
+2. **Real-World Robustness**: Does the detector hold up on phone-quality audio rather than studio recordings?
+3. **Accessibility**: Can it be delivered in a form that non-technical, high-risk users can actually use?
 
-## The Problem
+## Key Findings
+- **A frozen encoder is enough**: Training only a 1.5MB classification head on Gemma 4's frozen audio tower reached **5.20% EER** on the full ASVspoof 2021 LA evaluation set (148,176 samples)
+- **Training data must look like the real world**: Codec simulation (16kHz → 8kHz → 16kHz) was the most impactful preprocessing decision; without it, a model trained on studio audio learns to judge audio quality instead of synthesis artefacts
+- **Linear probing over LoRA**: LoRA fine-tuning runs produced NaN losses; a frozen backbone with a lightweight head trained stably and stays fast enough for browser inference (~2 seconds per clip)
+- **No install, no account**: Delivering the detector as a browser URL removes the main barrier for the users most exposed to voice phishing
 
-Voice cloning is a genuinely useful technology, but its misuse is accelerating. A convincing voice clone now requires three seconds of publicly available audio and a free online tool.
+## Dataset
+Training and validation use ASVspoof 2019 Logical Access; evaluation uses the full ASVspoof 2021 Logical Access set.
 
-- Over **$5 million** lost to AI voice phishing in the US in 2025; 1 in 3 victims lose money, averaging **$18,000 per incident** ([Trend Micro, 2026](https://news.trendmicro.com/2026/04/16/ai-voice-cloning/))
-- **$893 million** in AI-related scam losses reported to the FBI in 2025 — likely a significant undercount ([FBI IC3, 2025](https://www.ic3.gov/AnnualReport/Reports/2025_IC3Report.pdf))
-- Generative AI-enabled fraud projected to reach **$40 billion by 2027** ([Deloitte, 2024](https://www.deloitte.com/us/en/insights/industry/financial-services/deepfake-banking-fraud-risk-on-the-rise.html))
+| Split | Samples | Real | Fake |
+|-------|---------|------|------|
+| Train (2019 LA) | 25,380 | 2,580 | 22,800 |
+| Validation (2019 LA) | 24,844 | 2,548 | 22,296 |
+| Test (2021 LA eval) | 148,176 | 14,816 | 133,360 |
 
-Existing detection tools are either enterprise-grade (expensive, API-dependent) or research-grade (not consumer-deployable). TrueVoice fills that gap.
+Deepfake samples of a team member's own voice were also generated as a small real-world test set.
 
----
+> **Citation**:
+> X. Wang et al., "ASVspoof 2019: A large-scale public database of synthesized, converted and replayed speech", Computer Speech & Language, vol. 64, 2020.
+> J. Yamagishi et al., "ASVspoof 2021: Accelerating progress in spoofed and deepfake speech detection", ASVspoof 2021 Workshop, 2021. [arXiv:2109.00537](https://arxiv.org/abs/2109.00537)
 
-## Architecture
-
-We repurposed Gemma 4 E4B's `audio_tower` as a frozen feature extractor and trained a lightweight 1.5MB classification head on top.
+## Model
+Gemma 4 E4B's `audio_tower` is used as a frozen feature extractor, and a lightweight classification head is trained on top:
 
 ```text
 Raw audio (16kHz)
         ↓
 Mel spectrogram (via Gemma 4 processor)
         ↓
-Gemma 4 E4B audio_tower — frozen (1536-dim output)
+Gemma 4 E4B audio_tower, frozen (1536-dim output)
         ↓
 Mean pooling over time axis
         ↓
@@ -36,14 +49,15 @@ Linear(1536→256) → GELU → Dropout(0.3) → Linear(256→2)
 Real / Fake
 ```
 
-We froze the audio tower entirely and trained only the **1.5MB classification head**. This demonstrates that Gemma 4's pretrained audio representations generalize to security-critical tasks without backbone fine-tuning.
+### Design Decisions
+1. **Codec Simulation**: ASVspoof 2019 recordings are studio-quality, while real phone calls are compressed to 8kHz. All training audio was downsampled to 8kHz and back to 16kHz so the model learns genuine voice artefacts rather than audio-quality differences
+2. **Linear Probing**: Early LoRA fine-tuning runs produced NaN losses, so the backbone was frozen entirely and only the classification head was trained
+3. **Dtype Consistency**: Gemma 4 E4B operates in bfloat16, so input features are explicitly cast to bfloat16 inside the DataCollator to prevent NaN propagation
+4. **On-the-fly DataCollator**: The dataset stores only file paths and labels and loads audio per batch, keeping memory stable on Colab
 
----
+## Results Summary
 
-## Results
-
-Evaluated on the full [ASVspoof 2021 LA eval set](https://arxiv.org/abs/2109.00537) (148,176 samples):
-
+### ASVspoof 2021 LA Evaluation (148,176 samples)
 | Metric | Value |
 |--------|-------|
 | **EER** | **5.20%** |
@@ -51,67 +65,40 @@ Evaluated on the full [ASVspoof 2021 LA eval set](https://arxiv.org/abs/2109.005
 | Fake Recall | 96% |
 | Real Recall | 93% |
 | Fake Precision | 0.99 |
-| Classifier size | 1.5MB |
+| Classifier Size | 1.5MB |
 
----
+## My Role
+- Generated deepfake samples of my own voice as a real-world test set
+- Ran training experiments and hyperparameter tuning, including the switch from LoRA to linear probing after LoRA produced NaN losses
+- Ran evaluation on ASVspoof 2021 LA (EER, accuracy, recall, precision)
 
-## Training
+## Reproducibility
 
-**Dataset:** [ASVspoof 2019](https://datashare.ed.ac.uk/handle/10283/3336) Logical Access (train/dev) + ASVspoof 2021 LA eval ([Yamagishi et al., 2021](https://arxiv.org/abs/2109.00537))
+### Training Configuration
+| Setting | Value |
+|---------|-------|
+| Trainable Parameters | Classification head only (1.5MB) |
+| Epochs | 3 |
+| Learning Rate | 1e-3 (cosine schedule, 50 warmup steps) |
+| Effective Batch Size | 16 (2 × 8 gradient accumulation) |
+| Weight Decay | 0.01 |
+| Checkpoint Selection | Macro F1 on validation |
+| Validation Macro F1 by Epoch | 0.930 → 0.967 → 0.973 |
+| Hardware | Google Colab A100 |
 
-| Split | Samples | Real | Fake |
-|-------|---------|------|------|
-| Train | 25,380 | 2,580 | 22,800 |
-| Validation | 24,844 | 2,548 | 22,296 |
-| Test | 148,176 | 14,816 | 133,360 |
-
-**Key design decisions:**
-
-**Codec simulation** — ASVspoof 2019 recordings are studio-quality, while real-world phone calls pass through codecs that compress audio to 8kHz. We applied codec simulation to all training data (16kHz → 8kHz → 16kHz), forcing the model to learn actual voice artifacts rather than audio quality differences. This is the single most impactful preprocessing decision in our pipeline.
-
-**On-the-fly DataCollator** — Loading 25,000+ audio files into RAM is not feasible on Colab. We store only file paths and labels in the dataset object and load audio per batch, keeping memory stable throughout training.
-
-**Dtype consistency** — Gemma 4 E4B operates in bfloat16. Input features must be explicitly cast to bfloat16 inside the DataCollator to prevent NaN propagation at the boundary with the audio tower's computation graph.
-
----
-
-## Repository Structure
-
+### Repository Structure
 ```text
-├── truevoice_data_pipeline.ipynb   # Data preprocessing pipeline
-├── truevoice_finetune.ipynb        # Model training (linear probing)
-├── truevoice_test.ipynb            # EER evaluation on ASVspoof 2021
-├── truevoice_demo.ipynb            # Gradio demo (run to get live URL)
+├── notebooks/
+│   ├── truevoice_data_preprocess_pipeline.ipynb   # Data preprocessing (incl. codec simulation)
+│   ├── truevoice_finetune.ipynb                   # Training (linear probing)
+│   ├── truevoice_test.ipynb                       # EER evaluation on ASVspoof 2021 LA
+│   └── truevoice_demo.ipynb                       # Gradio demo
 └── saved_model/
-    ├── classifier_head.pt          # Trained classification head (1.5MB)
-    └── metadata.json               # Training metadata
+    └── classifier_head.pt                         # Trained classification head (1.5MB)
 ```
 
----
-
-## Running the Demo
-
-The demo runs as a Gradio web app. Running the final cell in `truevoice_demo.ipynb` generates a public URL valid for 72 hours.
-
-**Requirements:**
-- Google Colab with GPU enabled (T4 or higher)
-- HuggingFace account with access to `google/gemma-4-e4b-it`
-- HF token set as Colab secret (`HF_TOKEN`)
-
-**Steps:**
-1. Download `truevoice_demo.ipynb` from this repository
-2. Upload to [Google Colab](https://colab.research.google.com)
-3. Run all cells in order
-4. Copy the public Gradio URL from the output of the last cell
-
-**Supported inputs:**
-- Upload audio file (WAV, MP3, FLAC — max 29 seconds)
-- Record directly via microphone
-- **Phone Call Simulation Mode**: applies 8kHz codec processing to replicate real phone call conditions
-
----
-
-## Reproducing Training
+### Loading the Trained Model
+`AudioDeepfakeClassifier` is defined in each notebook (see `notebooks/truevoice_finetune.ipynb`).
 
 ```python
 from transformers import AutoProcessor, AutoModelForImageTextToText
@@ -134,45 +121,19 @@ clf_model.classifier.load_state_dict(
 clf_model = clf_model.to(torch.bfloat16)
 ```
 
-Full training pipeline: see `truevoice_finetune.ipynb`
+### Running the Demo
+Running all cells in `notebooks/truevoice_demo.ipynb` on Google Colab (GPU, T4 or higher) generates a public Gradio URL valid for 72 hours. A Hugging Face account with access to `google/gemma-4-e4b-it` and an `HF_TOKEN` Colab secret are required.
 
----
+Supported inputs: audio upload (WAV, MP3, FLAC; max 29 seconds), microphone recording, and **Phone Call Simulation Mode**, which applies 8kHz codec processing to replicate real phone-call conditions.
 
-## Technical Stack
-
-| Component | Detail |
-|-----------|--------|
-| Model | Gemma 4 E4B (`google/gemma-4-e4b-it`) |
-| Training | Google Colab, HuggingFace Transformers |
-| Dataset | ASVspoof 2019 LA + 2021 LA eval |
-| Demo | Gradio (browser-accessible, 72hr public URL) |
-| Classifier size | 1.5MB |
-
----
-
-## Why This Matters
-
-The elderly are disproportionately targeted by voice phishing and are also the least likely to install specialized software. A browser URL is a deliberate accessibility decision — TrueVoice requires nothing from the user except a browser and a microphone.
-
-**Roadmap:**
+## Roadmap
 - Integration with telecom provider APIs for passive call screening
 - On-device inference using Gemma 4 E2B for fully private, offline detection
-- Expansion to non-English voice cloning attacks
-
----
-
-## References
-
-- Yamagishi et al., [ASVspoof 2021: Accelerating progress in spoofed and deepfake speech detection](https://arxiv.org/abs/2109.00537) (2021)
-- FBI, [2025 Internet Crime Report](https://www.ic3.gov/AnnualReport/Reports/2025_IC3Report.pdf)
-- Trend Micro, [AI Voice Cloning Scam Report](https://news.trendmicro.com/2026/04/16/ai-voice-cloning/) (April 2026)
-- Deloitte, [Deepfake Banking Fraud Risk on the Rise](https://www.deloitte.com/us/en/insights/industry/financial-services/deepfake-banking-fraud-risk-on-the-rise.html) (2024)
-
----
+- Expansion to non-English voice-cloning attacks
 
 ## License
 The project source code is licensed under the MIT License.
 
-For the purposes of The Gemma 4 Good Hackathon, the winning Submission and the source code used to generate it are additionally made available under the Creative Commons Attribution 4.0 International (CC BY 4.0) License in accordance with the competition rules.
+For the purposes of the Gemma 4 Good Hackathon, the winning submission and the source code used to generate it are additionally made available under the Creative Commons Attribution 4.0 International (CC BY 4.0) License in accordance with the competition rules.
 
-Third-party models, datasets, and libraries remain subject to their respective licenses.
+Third-party models, datasets and libraries remain subject to their respective licenses.
